@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Netspy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #1a1d21;
+        --bg-row: #20242a;
+        --bg-row-alt: #1d2025;
+        --bg-row-hover: #262b32;
+        --border: #2e333a;
+        --text: #d7dadd;
+        --text-dim: #80868c;
+        --accent: #5b9dff;
+        --ok: #3fb968;
+        --warn: #e0a526;
+        --err: #f0584a;
+        --pending: #80868c;
+        --mono:
+          "SF Mono", "Berkeley Mono", "JetBrains Mono", ui-monospace, Menlo,
+          Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 12px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #16181b;
+        flex-shrink: 0;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(63, 185, 104, 0.5);
+        }
+        70% {
+          box-shadow: 0 0 0 6px rgba(63, 185, 104, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(63, 185, 104, 0);
+        }
+      }
+
+      header .title {
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        color: var(--text);
+      }
+
+      header .title .sub {
+        color: var(--text-dim);
+        font-weight: 400;
+        margin-left: 6px;
+      }
+
+      header .spacer {
+        flex: 1;
+      }
+
+      header input[type="search"] {
+        background: #20242a;
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        width: 220px;
+      }
+
+      header input[type="search"]:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      header button {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      header button:hover {
+        color: var(--text);
+        border-color: var(--accent);
+      }
+
+      .table-wrap {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        position: sticky;
+        top: 0;
+        background: #16181b;
+        z-index: 1;
+      }
+
+      th {
+        text-align: left;
+        font-weight: 500;
+        color: var(--text-dim);
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        user-select: none;
+      }
+
+      th.num,
+      td.num {
+        text-align: right;
+      }
+
+      tbody tr {
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+      }
+
+      tbody tr:nth-child(odd) {
+        background: var(--bg-row-alt);
+      }
+      tbody tr:nth-child(even) {
+        background: var(--bg-row);
+      }
+      tbody tr:hover {
+        background: var(--bg-row-hover);
+      }
+      tbody tr.selected {
+        background: #233044;
+      }
+
+      td {
+        padding: 5px 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 420px;
+      }
+
+      td.url {
+        color: var(--text);
+      }
+      td.method {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .status-pill {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .status-2xx {
+        color: var(--ok);
+        background: rgba(63, 185, 104, 0.12);
+      }
+      .status-3xx {
+        color: var(--accent);
+        background: rgba(91, 157, 255, 0.12);
+      }
+      .status-4xx,
+      .status-5xx,
+      .status-error {
+        color: var(--err);
+        background: rgba(240, 88, 74, 0.12);
+      }
+      .status-pending {
+        color: var(--pending);
+      }
+
+      .empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-dim);
+        gap: 6px;
+      }
+      .empty .big {
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      footer {
+        border-top: 1px solid var(--border);
+        background: #16181b;
+        padding: 5px 12px;
+        color: var(--text-dim);
+        flex-shrink: 0;
+        display: flex;
+        gap: 16px;
+      }
+
+      #drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 380px;
+        background: #16181b;
+        border-left: 1px solid var(--border);
+        transform: translateX(100%);
+        transition: transform 0.15s ease;
+        overflow-y: auto;
+        z-index: 10;
+      }
+      #drawer.open {
+        transform: translateX(0);
+      }
+      #drawer .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      #drawer .drawer-header button {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 14px;
+      }
+      #drawer .field {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      #drawer .field .label {
+        color: var(--text-dim);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 3px;
+      }
+      #drawer .field .value {
+        word-break: break-all;
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <span class="title">Netspy</span>
+        <span class="spacer"></span>
+        <input type="search" id="filter" placeholder="Filter URLs…" />
+        <button id="clear-btn">Clear</button>
+      </header>
+
+      <div class="table-wrap">
+        <table id="table">
+          <thead>
+            <tr>
+              <th style="width: 90px">Status</th>
+              <th style="width: 60px">Method</th>
+              <th>URL</th>
+              <th class="num" style="width: 90px">Time</th>
+              <th class="num" style="width: 80px">Started</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty" style="display: none">
+          <div class="big">No fetch calls yet</div>
+          <div>Waiting for your server to make a request…</div>
+        </div>
+      </div>
+
+      <footer>
+        <span id="count">0 requests</span>
+        <span id="pending-count"></span>
+      </footer>
+    </div>
+
+    <div id="drawer">
+      <div class="drawer-header">
+        <strong>Request details</strong>
+        <button id="drawer-close">✕</button>
+      </div>
+      <div id="drawer-body"></div>
+    </div>
+
+    <script>
+      const rowsEl = document.getElementById("rows");
+      const emptyEl = document.getElementById("empty");
+      const tableEl = document.getElementById("table");
+      const countEl = document.getElementById("count");
+      const pendingEl = document.getElementById("pending-count");
+      const filterInput = document.getElementById("filter");
+      const drawer = document.getElementById("drawer");
+      const drawerBody = document.getElementById("drawer-body");
+
+      const entryMap = new Map();
+      let order = [];
+      let filterText = "";
+      let selectedId = null;
+
+      function statusClass(status) {
+        if (status === "pending") return "status-pending";
+        if (status === "error") return "status-error";
+        const n = Number(status);
+        if (n >= 200 && n < 300) return "status-2xx";
+        if (n >= 300 && n < 400) return "status-3xx";
+        if (n >= 400 && n < 500) return "status-4xx";
+        if (n >= 500) return "status-5xx";
+        return "status-pending";
+      }
+
+      function fmtTime(ms) {
+        if (ms === undefined || ms === null) return "–";
+        if (ms < 1000) return Math.round(ms) + " ms";
+        return (ms / 1000).toFixed(2) + " s";
+      }
+
+      function fmtClock(epochMs) {
+        const d = new Date(epochMs);
+        return (
+          d.toLocaleTimeString(undefined, { hour12: false }) +
+          "." +
+          String(d.getMilliseconds()).padStart(3, "0")
+        );
+      }
+
+      function escapeHtml(str) {
+        if (str === undefined || str === null) return "";
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function render() {
+        const ids = filterText
+          ? order.filter((id) =>
+              entryMap.get(id)?.url?.toLowerCase().includes(filterText),
+            )
+          : order;
+
+        if (ids.length === 0) {
+          rowsEl.innerHTML = "";
+          emptyEl.style.display = "flex";
+          tableEl.style.display = "none";
+        } else {
+          emptyEl.style.display = "none";
+          tableEl.style.display = "table";
+          rowsEl.innerHTML = ids
+            .map((id) => {
+              const e = entryMap.get(id);
+              const cls = statusClass(e.status);
+              const sel = id === selectedId ? "selected" : "";
+              return `<tr class="${sel}" data-id="${id}">
+            <td><span class="status-pill ${cls}">${e.status === "pending" ? "…" : escapeHtml(e.status)}</span></td>
+            <td class="method">${escapeHtml(e.method || "GET")}</td>
+            <td class="url" title="${escapeHtml(e.url)}">${escapeHtml(e.url)}</td>
+            <td class="num">${fmtTime(e.duration)}</td>
+            <td class="num">${fmtClock(e.startedAt)}</td>
+          </tr>`;
+            })
+            .join("");
+        }
+
+        const pendingCount = order.filter(
+          (id) => entryMap.get(id)?.status === "pending",
+        ).length;
+        countEl.textContent = `${order.length} request${order.length === 1 ? "" : "s"}`;
+        pendingEl.textContent =
+          pendingCount > 0 ? `${pendingCount} pending` : "";
+      }
+
+      function upsert(entry) {
+        console.log(entry);
+
+        if (!entryMap.has(entry.id)) {
+          order.push(entry.id);
+        }
+        entryMap.set(entry.id, { ...entryMap.get(entry.id), ...entry });
+        render();
+        if (selectedId === entry.id) openDrawer(entry.id);
+      }
+
+      function openDrawer(id) {
+        const e = entryMap.get(id);
+        if (!e) return;
+        selectedId = id;
+        drawerBody.innerHTML = `
+      <div class="field"><div class="label">URL</div><div class="value">${escapeHtml(e.url)}</div></div>
+      <div class="field"><div class="label">Method</div><div class="value">${escapeHtml(e.method || "GET")}</div></div>
+      <div class="field"><div class="label">Status</div><div class="value">${escapeHtml(e.status)}${e.statusText ? " " + escapeHtml(e.statusText) : ""}</div></div>
+      <div class="field"><div class="label">Request Headers</div><div class="value"><pre>${escapeHtml(JSON.stringify(e.requestHeaders, null, 2))}</pre></div></div>
+      <div class="field"><div class="label">Response Headers</div><div class="value"><pre>${escapeHtml(JSON.stringify(e.responseHeaders, null, 2))}</pre></div></div>
+      <div class="field"><div class="label">Request Body</div><div class="value"><pre>${escapeHtml(e.body, null, 2)}</pre></div></div>
+      <div class="field"><div class="label">Duration</div><div class="value">${fmtTime(e.duration)}</div></div>
+      <div class="field"><div class="label">Started</div><div class="value">${new Date(e.startedAt).toLocaleString()}</div></div>
+      ${e.error ? `<div class="field"><div class="label">Error</div><div class="value">${escapeHtml(e.error)}</div></div>` : ""}
+    `;
+        drawer.classList.add("open");
+        render();
+      }
+
+      document.getElementById("drawer-close").addEventListener("click", () => {
+        drawer.classList.remove("open");
+        selectedId = null;
+        render();
+      });
+
+      rowsEl.addEventListener("click", (ev) => {
+        const tr = ev.target.closest("tr");
+        if (!tr) return;
+        openDrawer(tr.dataset.id);
+      });
+
+      document.getElementById("clear-btn").addEventListener("click", () => {
+        entryMap.clear();
+        order = [];
+        selectedId = null;
+        drawer.classList.remove("open");
+        fetch("/__clear", { method: "POST" });
+        render();
+      });
+
+      filterInput.addEventListener("input", (e) => {
+        filterText = e.target.value.toLowerCase();
+        render();
+      });
+
+      function connect() {
+        const es = new EventSource("/__stream");
+        es.onmessage = (ev) => {
+          try {
+            upsert(JSON.parse(ev.data));
+          } catch {}
+        };
+        es.onerror = () => {};
+      }
+
+      connect();
+      render();
+    </script>
+  </body>
+</html>

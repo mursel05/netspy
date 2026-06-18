@@ -1,0 +1,29 @@
+{
+  "name": "netspy",
+  "version": "0.2.0",
+  "description": "Wrap any dev command and watch server-side fetch() calls in a live DevTools-style network panel.",
+  "type": "module",
+  "bin": {
+    "netspy": "bin/netspy.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ssr",
+    "nextjs",
+    "devtools",
+    "network",
+    "fetch",
+    "cli",
+    "debug",
+    "nodejs"
+  ]
+}
