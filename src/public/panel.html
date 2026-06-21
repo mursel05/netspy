@@ -424,8 +424,8 @@
       <div class="field"><div class="label">URL</div><div class="value">${escapeHtml(e.url)}</div></div>
       <div class="field"><div class="label">Method</div><div class="value">${escapeHtml(e.method || "GET")}</div></div>
       <div class="field"><div class="label">Status</div><div class="value">${escapeHtml(e.status)}${e.statusText ? " " + escapeHtml(e.statusText) : ""}</div></div>
-      <div class="field"><div class="label">Request Headers</div><div class="value"><pre>${escapeHtml(JSON.stringify(e.requestHeaders, null, 2))}</pre></div></div>
-      <div class="field"><div class="label">Response Headers</div><div class="value"><pre>${escapeHtml(JSON.stringify(e.responseHeaders, null, 2))}</pre></div></div>
+      <div class="field"><div class="label">Request Headers</div><div class="value"><pre>${escapeHtml(JSON.stringify(e.requestHeader, null, 2))}</pre></div></div>
+      <div class="field"><div class="label">Response Headers</div><div class="value"><pre>${escapeHtml(JSON.stringify(e.responseHeader, null, 2))}</pre></div></div>
       <div class="field"><div class="label">Request Body</div><div class="value"><pre>${escapeHtml(e.body, null, 2)}</pre></div></div>
       <div class="field"><div class="label">Duration</div><div class="value">${fmtTime(e.duration)}</div></div>
       <div class="field"><div class="label">Started</div><div class="value">${new Date(e.startedAt).toLocaleString()}</div></div>
