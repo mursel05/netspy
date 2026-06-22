@@ -1,6 +1,6 @@
 {
   "name": "netspy",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Wrap any dev command and watch server-side fetch() calls in a live DevTools-style network panel.",
   "repository": {
     "type": "git",
