@@ -6,7 +6,7 @@ never touch the browser's own Network tab.
 
 ```bash
 netspy npm run dev
-# -> opens http://localhost:4000 with a live list of every request
+#    opens http://localhost:4000 with a live list of every request
 #    your server process makes (SSR data fetching, RSC loaders, etc.)
 ```
 
@@ -18,9 +18,9 @@ Node 18+, since it patches the _global_ `fetch`, not framework internals.
 ```bash
 npm install -g netspy
 
-netspy npm run dev          # default port 4000
-netspy -p 9000 npm run dev          # specify a port
-netspy node server.js          # run a custom server script
+netspy npm run dev                # default port 4000
+netspy -p 9000 npm run dev        # specify a port
+netspy node server.js             # run a custom server script
 ```
 
 Open the printed URL (it also tries to auto-open your default browser).
