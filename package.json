@@ -2,6 +2,10 @@
   "name": "netspy",
   "version": "0.3.3",
   "description": "Wrap any dev command and watch server-side fetch() calls in a live DevTools-style network panel.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mursel05/netspy.git"
+  },
   "type": "module",
   "bin": {
     "netspy": "bin/netspy.js"
