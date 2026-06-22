@@ -1,6 +1,6 @@
 "use strict";
 
-const REPORT_PORT = process.env.NETWRAP_PORT;
+const REPORT_PORT = process.env.NETSPY_PORT;
 const REPORT_HOST = "127.0.0.1";
 
 if (!REPORT_PORT) {
