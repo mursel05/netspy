@@ -19,7 +19,7 @@ Node 18+, since it patches the _global_ `fetch`, not framework internals.
 npm install -g netspy
 
 netspy npm run dev          # default port 4000
-netspy --port 9000 npm run dev          # specify a port
+netspy -p 9000 npm run dev          # specify a port
 netspy node server.js          # run a custom server script
 ```
 

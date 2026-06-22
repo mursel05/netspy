@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PANEL_HTML_PATH = path.join(__dirname, "public", "panel.html");
-
 const MAX_ENTRIES = 1000;
 const entries = [];
 const entryIndexById = new Map();
