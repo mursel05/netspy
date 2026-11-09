@@ -65,6 +65,12 @@ async function startServerWithFallback(startPort) {
 }
 
 async function main() {
+  // `netspy mcp ...` runs the MCP server instead of wrapping a command.
+  if (process.argv[2] === "mcp") {
+    const { runMcp } = await import("../src/mcp/cli.js");
+    return runMcp(process.argv.slice(3));
+  }
+
   const { requestedPort, command } = parseArgs(process.argv.slice(2));
 
   if (command.length === 0) {

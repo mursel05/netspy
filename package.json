@@ -16,6 +16,9 @@
     "README.md",
     "LICENSE"
   ],
+  "scripts": {
+    "test": "node --test"
+  },
   "engines": {
     "node": ">=18"
   },
@@ -28,6 +31,13 @@
     "fetch",
     "cli",
     "debug",
-    "nodejs"
-  ]
+    "nodejs",
+    "mcp",
+    "model-context-protocol",
+    "ai"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^3.25.76"
+  }
 }
