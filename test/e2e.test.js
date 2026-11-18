@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { SECRETS } from "./helpers.js";
+import { SECRETS, stopTree } from "./helpers.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "netspy.js");
 
@@ -97,7 +97,7 @@ before(async () => {
 
 after(async () => {
   await client?.close().catch(() => {});
-  netspy?.kill("SIGTERM");
+  stopTree(netspy);
   await new Promise((r) => target?.close(r));
   if (scriptDir) rmSync(scriptDir, { recursive: true, force: true });
 });

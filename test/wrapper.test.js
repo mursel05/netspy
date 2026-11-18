@@ -10,6 +10,7 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
+import { stopTree } from "./helpers.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "netspy.js");
 const NODE = process.execPath;
@@ -126,7 +127,7 @@ test("captures fetch/http headers and bodies correctly, with no stuck duplicates
     assert.equal(https.via, "https");
     assert.equal(https.status, "error");
   } finally {
-    ns.kill("SIGTERM");
+    stopTree(ns);
     await ns.exited;
   }
 });
@@ -144,12 +145,12 @@ test("flags after the command and arguments with spaces reach the command", asyn
     assert.equal(info.port, "3123");
     assert.match(ns.output, new RegExp(`127\\.0\\.0\\.1:${port}`), "panel used NetSpy's own port");
   } finally {
-    ns.kill("SIGTERM");
+    stopTree(ns);
     await ns.exited;
   }
 });
 
-test("SIGTERM stops the wrapped process too (no orphans) and exits 143", async () => {
+test("SIGTERM stops the wrapped process too (no orphans) and exits 143", { skip: process.platform === "win32" && "no POSIX signals on Windows" }, async () => {
   const port = await freePort();
   const out = path.join(dir, "out3.json");
   const ns = runNetspy(["--no-open", "-p", String(port), NODE, path.join(dir, "app.cjs")], {
@@ -175,7 +176,7 @@ test("a missing browser opener does not crash NetSpy", { skip: process.platform 
     await new Promise((r) => setTimeout(r, 200));
     assert.equal(ns.exitCode, null, `netspy exited early:\n${ns.output}`);
   } finally {
-    ns.kill("SIGTERM");
+    stopTree(ns);
     await ns.exited;
   }
 });
@@ -183,6 +184,11 @@ test("a missing browser opener does not crash NetSpy", { skip: process.platform 
 test("unknown commands fail with exit code 127 and a clear message", async () => {
   const ns = runNetspy(["--no-open", "-p", String(await freePort()), "definitely-not-a-command-xyz", "arg"]);
   const { code } = await ns.exited;
+  if (process.platform === "win32") {
+    // Windows runs commands through cmd.exe, which reports this itself.
+    assert.notEqual(code, 0);
+    return;
+  }
   assert.equal(code, 127);
   assert.match(ns.output, /command not found: definitely-not-a-command-xyz/);
 });
