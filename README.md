@@ -6,12 +6,13 @@ never touch the browser's own Network tab.
 
 ```bash
 netspy npm run dev
-#    opens http://localhost:4000 with a live list of every request
+#    opens http://127.0.0.1:4000 with a live list of every request
 #    your server process makes (SSR data fetching, RSC loaders, etc.)
 ```
 
 Works with Next.js, Remix, plain Express, or anything else that runs on
-Node 18+, since it patches the _global_ `fetch`, not framework internals.
+Node 18+, since it patches the _global_ `fetch` and the `http`/`https`
+modules, not framework internals.
 
 ## Install & use
 
@@ -21,13 +22,32 @@ npm install -g netspy
 netspy npm run dev                # default port 4000
 netspy -p 9000 npm run dev        # specify a port
 netspy node server.js             # run a custom server script
+netspy next dev -p 3001           # flags after the command go to the command
+netspy PORT=3001 node server.js   # set env vars for the command (works on Windows too)
+netspy "npm run build && npm start"  # one quoted argument runs through your shell
+netspy --no-open npm run dev      # don't open a browser
 ```
+
+| Option | Description |
+| --- | --- |
+| `-p, --port <n>` | Panel port (default `4000`). If it's taken, the next free port is used. |
+| `--no-open` | Don't open the panel in your browser. |
+| `-h, --help` | Show help. |
+| `-v, --version` | Show the version. |
+
+NetSpy only reads its own options **before** the command; everything after the
+command name is passed to the command unchanged. Use `--` if your command
+itself starts with a dash.
 
 Open the printed URL (it also tries to auto-open your default browser).
 Every server-side request call made by the wrapped process — at boot,
 during SSR, in route handlers, anywhere — shows up as a row with method,
 URL, status, and duration. Click a row for details. Use the filter box to
-narrow by URL. "Clear" wipes the current session's log.
+narrow by URL. "Clear" wipes the current session's log (in every open tab).
+
+The panel only listens on `127.0.0.1` and rejects requests for other host
+names, because captured traffic contains auth headers and cookies. NetSpy's
+exit code is the wrapped command's exit code.
 
 ## MCP server (let AI agents read your captured requests)
 
@@ -153,9 +173,8 @@ the interceptor, panel server and `netspy <command>` flow are unchanged.
 - History is in memory (max 1000 entries) and resets when Netspy restarts.
 - Only requests made by the wrapped process are captured, and only the request
   side of bodies; response bodies are not captured.
-- `fetch()` calls that pass a `Headers` instance, and `fetch()` response
-  headers, currently arrive empty because the interceptor serializes them as `{}`.
-  Headers from the `http`/`https` modules and plain-object headers are shown (redacted).
+- Binary, stream and `Blob` request bodies are shown as a size summary, and
+  text bodies are truncated to 64 KB.
 - With several Netspy instances running, auto-detect picks the lowest port;
   use `--port` to choose one.
 

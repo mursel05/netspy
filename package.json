@@ -1,7 +1,12 @@
 {
   "name": "netspy",
-  "version": "0.3.5",
+  "version": "1.0.0",
   "description": "Wrap any dev command and watch server-side fetch() calls in a live DevTools-style network panel.",
+  "author": "Mursal Hakhverdiyev <mursal.haxverdiyev@gmail.com>",
+  "homepage": "https://github.com/mursel05/netspy#readme",
+  "bugs": {
+    "url": "https://github.com/mursel05/netspy/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mursel05/netspy.git"
@@ -14,6 +19,7 @@
     "bin",
     "src",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
@@ -38,6 +44,6 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "zod": "^3.25.76"
+    "zod": "^4.6.7"
   }
 }

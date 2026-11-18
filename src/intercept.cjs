@@ -60,11 +60,94 @@ function safeUrl(resource) {
 }
 
 function safeMethod(resource, options) {
-  if (options && options.method) return options.method.toUpperCase();
-  if (resource && typeof resource === "object" && resource.method) {
-    return resource.method.toUpperCase();
-  }
+  try {
+    if (options && options.method) return String(options.method).toUpperCase();
+    if (resource && typeof resource === "object" && resource.method) {
+      return String(resource.method).toUpperCase();
+    }
+  } catch {}
   return "GET";
+}
+
+/**
+ * Turns any header shape (Headers instance, array of pairs, plain object,
+ * Node's IncomingHttpHeaders) into a plain JSON-safe object. JSON.stringify
+ * on a Headers instance yields {}, which is why this is needed.
+ */
+function serializeHeaders(headers) {
+  try {
+    if (!headers) return undefined;
+    if (typeof headers.forEach === "function" && typeof headers.get === "function") {
+      const out = {};
+      headers.forEach((value, name) => {
+        out[name] = value;
+      });
+      return out;
+    }
+    if (Array.isArray(headers)) {
+      const out = {};
+      for (const pair of headers) {
+        if (Array.isArray(pair) && pair.length >= 2) out[String(pair[0])] = String(pair[1]);
+      }
+      return out;
+    }
+    if (typeof headers === "object") {
+      const out = {};
+      for (const [name, value] of Object.entries(headers)) {
+        if (value === undefined) continue;
+        out[name] = Array.isArray(value) ? value.map(String).join(", ") : String(value);
+      }
+      return out;
+    }
+  } catch {}
+  return undefined;
+}
+
+const MAX_BODY_CHARS = 64 * 1024;
+
+/**
+ * Describes a request body as a string the panel can show. Binary bodies,
+ * streams and form data are summarised instead of being serialised byte by
+ * byte, and long text is truncated so a report never exceeds the panel's
+ * size limit.
+ */
+function serializeBody(body) {
+  try {
+    if (body === undefined || body === null) return undefined;
+    let text;
+    if (typeof body === "string") text = body;
+    else if (body instanceof URLSearchParams) text = body.toString();
+    else if (Buffer.isBuffer(body) || ArrayBuffer.isView(body)) {
+      return `[binary body, ${body.byteLength} bytes]`;
+    } else if (body instanceof ArrayBuffer) {
+      return `[binary body, ${body.byteLength} bytes]`;
+    } else if (typeof Blob !== "undefined" && body instanceof Blob) {
+      return `[Blob, ${body.size} bytes]`;
+    } else if (typeof FormData !== "undefined" && body instanceof FormData) {
+      const fields = [];
+      body.forEach((value, key) => {
+        fields.push(typeof value === "string" ? `${key}=${value}` : `${key}=[file]`);
+      });
+      text = fields.join("&");
+    } else if (typeof body.getReader === "function" || typeof body.pipe === "function") {
+      return "[stream body]";
+    } else {
+      text = String(body);
+    }
+    return text.length > MAX_BODY_CHARS
+      ? `${text.slice(0, MAX_BODY_CHARS)}… [truncated, ${text.length} chars]`
+      : text;
+  } catch {
+    return "[unreadable body]";
+  }
+}
+
+function requestHeadersFor(resource, options) {
+  if (options && options.headers) return serializeHeaders(options.headers);
+  if (resource && typeof resource === "object" && resource.headers) {
+    return serializeHeaders(resource.headers);
+  }
+  return undefined;
 }
 
 const originalFetch = globalThis.fetch;
@@ -84,8 +167,8 @@ if (typeof originalFetch === "function") {
       startedAt,
       status: "pending",
       phase: "start",
-      requestHeader: options?.headers,
-      body: options?.body,
+      requestHeader: requestHeadersFor(resource, options),
+      body: serializeBody(options?.body),
     });
 
     try {
@@ -100,7 +183,7 @@ if (typeof originalFetch === "function") {
         statusText: response.statusText,
         ok: response.ok,
         duration: performance.now() - start,
-        responseHeader: response?.headers,
+        responseHeader: serializeHeaders(response?.headers),
       });
       return response;
     } catch (err) {
@@ -121,12 +204,29 @@ if (typeof originalFetch === "function") {
 
 function buildUrlFromArgs(urlArg, optionsArg, scheme) {
   try {
-    if (urlArg) return new URL(String(urlArg)).toString();
+    if (urlArg) {
+      const u = new URL(String(urlArg));
+      // http.request(url, options): options override parts of the URL.
+      if (optionsArg && optionsArg.path) {
+        return new URL(optionsArg.path, u.origin).toString();
+      }
+      return u.toString();
+    }
     if (optionsArg) {
-      const host = optionsArg.hostname || optionsArg.host || "localhost";
-      const port = optionsArg.port ? `:${optionsArg.port}` : "";
+      let host = optionsArg.hostname || optionsArg.host || "localhost";
+      if (!optionsArg.hostname && typeof optionsArg.host === "string") {
+        // `host` may carry a port ("example.com:8080").
+        host = optionsArg.host.replace(/:\d+$/, "");
+      }
+      if (host.includes(":") && !host.startsWith("[")) host = `[${host}]`;
+      const protocol = String(optionsArg.protocol || `${scheme}:`).replace(/:$/, "");
+      const defaultPort = protocol === "https" ? 443 : 80;
+      const port =
+        optionsArg.port && Number(optionsArg.port) !== defaultPort
+          ? `:${optionsArg.port}`
+          : "";
       const path = optionsArg.path || "/";
-      return `${scheme}://${host}${port}${path}`;
+      return `${protocol}://${host}${port}${path}`;
     }
     return "unknown";
   } catch {
@@ -157,7 +257,7 @@ function patchRequestModule(mod, scheme) {
         host = u.hostname;
         port = u.port;
       } else {
-        host = optionsArg?.host || optionsArg?.hostname;
+        host = optionsArg?.hostname || String(optionsArg?.host || "").replace(/:\d+$/, "");
         port = optionsArg?.port;
       }
     } catch {}
@@ -185,8 +285,7 @@ function patchRequestModule(mod, scheme) {
       status: "pending",
       phase: "start",
       via: viaLabel,
-      requestHeader: optionsArg?.headers,
-      body: optionsArg?.body,
+      requestHeader: serializeHeaders(optionsArg?.headers),
     });
 
     const req = invoke(...args);
@@ -203,7 +302,7 @@ function patchRequestModule(mod, scheme) {
         statusText: res.statusMessage,
         ok: res.statusCode >= 200 && res.statusCode < 400,
         duration: performance.now() - start,
-        responseHeader: res?.headers,
+        responseHeader: serializeHeaders(res?.headers),
       });
     });
 
@@ -219,15 +318,19 @@ function patchRequestModule(mod, scheme) {
         error: err && err.message ? err.message : String(err),
         duration: performance.now() - start,
       });
+      // Our listener must not change the app's behaviour: without NetSpy an
+      // unhandled request error throws, so keep throwing when nobody else
+      // listens for it.
+      if (req.listenerCount("error") === 1) throw err;
     });
 
     return req;
   }
   mod.request = function patchedRequest(...args) {
-    return instrument(originalRequest, args, "http");
+    return instrument(originalRequest, args, scheme);
   };
   mod.get = function patchedGet(...args) {
-    return instrument(originalGet, args, "http");
+    return instrument(originalGet, args, scheme);
   };
 }
 

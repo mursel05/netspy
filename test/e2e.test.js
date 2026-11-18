@@ -70,12 +70,10 @@ before(async () => {
   targetPort = target.address().port;
   panelPort = await freePort();
 
-  // netspy runs the wrapped command through a shell without re-quoting its
-  // arguments, so keep the command simple: `node <file>`.
   scriptDir = mkdtempSync(path.join(tmpdir(), "netspy-e2e-"));
   const scriptPath = path.join(scriptDir, "app.cjs");
   writeFileSync(scriptPath, wrappedScript);
-  netspy = spawn(process.execPath, [BIN, "-p", String(panelPort), "node", JSON.stringify(scriptPath)], {
+  netspy = spawn(process.execPath, [BIN, "--no-open", "-p", String(panelPort), process.execPath, scriptPath], {
     env: { ...process.env, TARGET_PORT: String(targetPort) },
     stdio: ["ignore", "ignore", "inherit"],
   });
