@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { spawnSync } from "node:child_process";
 import { createMcpServer } from "../src/mcp/server.js";
 
 export const T0 = Date.parse("2026-01-01T00:00:00.000Z");
@@ -105,5 +106,15 @@ export async function call(client, name, args = {}) {
   } catch (err) {
     // Some SDK versions surface validation failures as protocol errors.
     return { isError: true, text: String(err.message), data: null };
+  }
+}
+
+/** Stops netspy and everything it started (Windows has no SIGTERM and does not kill child trees). */
+export function stopTree(child) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) return;
+  if (process.platform === "win32") {
+    spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+  } else {
+    child.kill("SIGTERM");
   }
 }

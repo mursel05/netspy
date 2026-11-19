@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { SECRETS } from "./helpers.js";
+import { SECRETS, stopTree } from "./helpers.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "netspy.js");
 
@@ -70,12 +70,10 @@ before(async () => {
   targetPort = target.address().port;
   panelPort = await freePort();
 
-  // netspy runs the wrapped command through a shell without re-quoting its
-  // arguments, so keep the command simple: `node <file>`.
   scriptDir = mkdtempSync(path.join(tmpdir(), "netspy-e2e-"));
   const scriptPath = path.join(scriptDir, "app.cjs");
   writeFileSync(scriptPath, wrappedScript);
-  netspy = spawn(process.execPath, [BIN, "-p", String(panelPort), "node", JSON.stringify(scriptPath)], {
+  netspy = spawn(process.execPath, [BIN, "--no-open", "-p", String(panelPort), process.execPath, scriptPath], {
     env: { ...process.env, TARGET_PORT: String(targetPort) },
     stdio: ["ignore", "ignore", "inherit"],
   });
@@ -99,7 +97,7 @@ before(async () => {
 
 after(async () => {
   await client?.close().catch(() => {});
-  netspy?.kill("SIGTERM");
+  stopTree(netspy);
   await new Promise((r) => target?.close(r));
   if (scriptDir) rmSync(scriptDir, { recursive: true, force: true });
 });
