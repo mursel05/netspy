@@ -1,9 +1,9 @@
 {
   "name": "netspy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Wrap any dev command and watch server-side fetch() calls in a live DevTools-style network panel.",
   "author": "Mursal Hakhverdiyev <mursal.haxverdiyev@gmail.com>",
-  "homepage": "https://github.com/mursel05/netspy#readme",
+  "homepage": "https://netspy-js.vercel.app",
   "bugs": {
     "url": "https://github.com/mursel05/netspy/issues"
   },

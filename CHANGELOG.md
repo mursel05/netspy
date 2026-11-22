@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-22
+
+### Changed
+
+- New website: [netspy-js.vercel.app](https://netspy-js.vercel.app). It is now the
+  package homepage on npm and GitHub, and is linked from the README.
+
 ## [1.0.0] - 2026-11-19
 
 First stable release. Mostly bug fixes; a few behaviour changes are marked
@@ -75,5 +82,6 @@ First stable release. Mostly bug fixes; a few behaviour changes are marked
 
 Pre-1.0 releases. See the git history.
 
+[1.0.1]: https://github.com/mursel05/netspy/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/mursel05/netspy/compare/v0.3.5...v1.0.0
 [0.3.5]: https://github.com/mursel05/netspy/releases/tag/v0.3.5
