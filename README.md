@@ -1,5 +1,10 @@
 # Netspy
 
+[![npm](https://img.shields.io/npm/v/netspy)](https://www.npmjs.com/package/netspy)
+[![license](https://img.shields.io/npm/l/netspy)](./LICENSE)
+
+**Website:** [netspy-js.vercel.app](https://netspy-js.vercel.app)
+
 Wrap any dev command and watch its server-side requests live, in a
 DevTools-style network panel in your browser — even though those requests
 never touch the browser's own Network tab.
@@ -95,7 +100,7 @@ With a fixed port: `"args": ["-y", "netspy", "mcp", "--port", "9000"]`.
 claude mcp add netspy -- npx -y netspy mcp
 ```
 
-**Running from a local checkout** (e.g. before the MCP release is on npm)
+**Running from a local checkout**
 
 ```bash
 node /path/to/netspy/bin/netspy.js mcp
